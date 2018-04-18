@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "strict": true,
+    "outDir": "../lib/server",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "../types"
+  },
+  "include": [
+    "server/**/*.ts"
+  ]
+}

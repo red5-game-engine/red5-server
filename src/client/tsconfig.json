@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "system",
+    "strict": true,
+    "outFile": "../../lib/client/red5.js",
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}
