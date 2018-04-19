@@ -5,7 +5,7 @@ namespace red5 {
 
   export abstract class Connector {
 
-    protected abstract onMessage(message: string): void
+    protected abstract onMessage(message: MessageEvent): void
 
     protected endpoint: string
     protected requestDisconnect: boolean = false

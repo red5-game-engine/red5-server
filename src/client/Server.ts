@@ -29,8 +29,8 @@ namespace red5 {
 
     protected joinEvents: JoinEmitter[] = []
 
-    protected onMessage(message: string) {
-      let msg = JSON.parse(message) as MessageFromServer
+    protected onMessage(message: MessageEvent) {
+      let msg = JSON.parse(message.data.toString()) as MessageFromServer
       if (msg.event == 'joined') {
         let ip = msg.message.ip as string
         let port = msg.message.port as number

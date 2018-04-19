@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build",
+      "group": "build",
+      "type": "shell",
+      "problemMatcher": "$tsc-watch",
+      "dependsOn": [
+        "Client",
+        "Server"
+      ]
+    },
+    {
+      "label": "Client",
+      "type": "shell",
+      "command": "tsc",
+      "problemMatcher": "$tsc-watch",
+      "args": [
+        "-p",
+        "src/client",
+        "-w"
+      ]
+    },
+    {
+      "label": "Server",
+      "type": "shell",
+      "command": "tsc",
+      "problemMatcher": "$tsc-watch",
+      "args": [
+        "-p",
+        "src/server",
+        "-w"
+      ]
+    }
+  ]
+}

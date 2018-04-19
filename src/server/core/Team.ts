@@ -5,8 +5,13 @@ export class Team {
 
   private clients: Client[] = []
   public readonly id: string = uuid()
+  public readonly name: string
 
   public get size(): number { return this.clients.length }
+
+  public constructor(name: string) {
+    this.name = name
+  }
 
   public join(client: Client) {
     if (this.clients.includes(client)) {

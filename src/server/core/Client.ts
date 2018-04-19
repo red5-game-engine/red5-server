@@ -31,10 +31,11 @@ export class Client {
         this.eventEmitter.emit('error', message)
       }
     })
+    client.on('close', () => this.eventEmitter.emit('disconnected'))
   }
 
-  public send(event: string, message: any) {
-    this.client.send({ event, message })
+  public send(event: string, message?: any) {
+    this.client.send(JSON.stringify({ event, message }))
   }
 
   public on(event: string, callback: (...args: any[]) => void) {
@@ -45,8 +46,17 @@ export class Client {
     this.eventEmitter.once(event, callback)
   }
 
+  public disconnected(callback: (socket: WebSocket) => void) {
+    this.eventEmitter.on('disconnected', callback)
+  }
+
   public error(callback: (...args: any[]) => void) {
     this.eventEmitter.on('error', callback)
+  }
+
+  public gameOver() {
+    this.send('game-over')
+    this.client.close()
   }
 
 }

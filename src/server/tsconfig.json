@@ -3,12 +3,12 @@
     "target": "es2016",
     "module": "commonjs",
     "strict": true,
-    "outDir": "../lib/server",
+    "outDir": "../../lib/server",
     "sourceMap": true,
     "declaration": true,
-    "declarationDir": "../types"
+    "declarationDir": "../../types"
   },
   "include": [
-    "server/**/*.ts"
+    "**/*.ts"
   ]
 }
