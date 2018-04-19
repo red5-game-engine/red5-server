@@ -1,20 +1,21 @@
 {
-    "name": "red5",
-    "version": "1.0.0",
-    "description": "",
-    "main": "lib/server/index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "types": "types/index.d.ts",
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "uuid": "^3.2.1",
-        "uws": "^9.147.0"
-    },
-    "devDependencies": {
-        "@types/uuid": "^3.4.3",
-        "@types/uws": "^0.13.2"
-    }
+  "name": "red5",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/server/index.js",
+  "scripts": {
+    "prepack": "rm -rf ./lib && rm -rf ./types && tsc -p ./src/tsconfig.client.json && tsc -p ./src/tsconfig.server.json && uglifyjs -c -m -o ./lib/client/red5.min.js -- ./lib/client/red5.js"
+  },
+  "types": "types/index.d.ts",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "uuid": "^3.2.1",
+    "uws": "^9.147.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^3.4.3",
+    "@types/uws": "^0.13.2",
+    "uglify-es": "^3.3.9"
+  }
 }

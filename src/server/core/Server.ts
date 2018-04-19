@@ -16,6 +16,7 @@ export class Server {
 
   public readonly clients: Client[] = []
   private readonly matchMaker!: MatchMaker<Game>
+  private readonly workers: cluster.Worker[] = []
 
   private settings: Red5Options = {
     port: 5555,
@@ -25,30 +26,44 @@ export class Server {
 
   public constructor(matchMaker: MatchMaker<Game>, options?: Red5Options) {
     this.settings = Object.assign(this.settings, options)
+    this.matchMaker = matchMaker
+    this.startServer()
+  }
+
+  public startServer() {
     if (cluster.isMaster) {
       console.log(`Master ${process.pid} is running`)
       let clusterSize = typeof this.settings.workers === 'number' ? this.settings.workers : -1
       if (clusterSize == -1) clusterSize = os.cpus().length
       if (clusterSize > 0) {
         for (let i = 0; i < clusterSize; i++) {
-          cluster.fork()
+          this.workers.push(cluster.fork())
         }
-        cluster.on('exit', (worker, code, signal) => console.log(`worker ${worker.process.pid} died`))
+        cluster.on('exit', (worker, code, signal) => {
+          if (signal == 'SIGINT') {
+            console.log(`Worker ${worker.process.pid} shutdown`)
+          } else {
+            console.log(`Worker ${worker.process.pid} died. Restarting...`)
+            let idx = this.workers.indexOf(worker)
+            idx > -1 && this.workers.splice(idx, 1)
+            this.workers.push(cluster.fork())
+          }
+        })
+        // Kill the workers
+        process.on('SIGINT', () => this.workers.forEach(worker => worker.kill('SIGINT')))
       } else {
-        this.matchMaker = matchMaker
-        this.initServer(options)
+        this.initServer()
       }
     } else {
       console.log(`Worker ${process.pid} is running`)
-      this.matchMaker = matchMaker
-      this.initServer(options)
+      this.initServer()
     }
   }
 
-  private initServer(options?: Red5Options) {
+  private initServer() {
     this.matchMaker['setServer'](this)
 
-    let server = http.createServer((req, res) => { }).listen(this.settings.port)
+    let server = http.createServer().listen(this.settings.port)
     let wss = new WebSocketServer({ server })
 
     wss.on('connection', (ws) => {
