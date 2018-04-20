@@ -10,7 +10,7 @@ export interface Red5Options {
   port?: number
   redis?: string
   workers?: number
-  type: 'socket' | 'websocket'
+  type: 'socket' | 'websocket' | 'both'
   matchMaker: MatchMakerType<MatchMaker>
   game: string
 }
@@ -22,20 +22,21 @@ export class Server {
   private readonly matchMaker!: MatchMaker
   public address!: { port: number, family: string, address: string }
 
-  public readonly settings: Red5Options = {
+  public readonly settings: Red5Options
+  public readonly ps: Partial<Red5Options> = {
     port: 5555,
-    redis: undefined,
     workers: -1,
-    matchMaker: undefined,
-    game: '',
-    type: 'websocket'
+    game: undefined,
+    type: undefined,
+    redis: undefined,
+    matchMaker: undefined
   }
 
   public constructor(options: Red5Options) {
-    this.settings = Object.assign(this.settings, options)
-    this.matchMaker = new this.settings.matchMaker(this.settings.game)
-    // process.on('SIGINT', () => this.workers.forEach(worker => worker.kill('SIGINT')))
+    this.settings = Object.assign(this.ps, options) as Red5Options
+    this.matchMaker = new this.settings.matchMaker(this, this.settings.game)
     this.initServer()
+    // process.on('SIGINT', () => this.workers.forEach(worker => worker.kill('SIGINT')))
   }
 
   // public startServer() {
@@ -69,33 +70,33 @@ export class Server {
   // }
 
   private initServer() {
-    this.matchMaker['setServer'](this)
-
     if (this.settings.type == 'socket') {
       let server = new net.Server().listen(this.settings.port)
-      server.on('connection', (sock) => {
-        this.initClient(sock)
-      })
+      this.getServerAddress(server)
+      server.on('connection', (sock) => this.initClient(sock))
     } else {
       let server = http.createServer().listen(this.settings.port)
-      this.address = server.address()
-      this.address.address = this.address.address.replace(/^::$/, '127.0.0.1')
       let wss = new WebSocketServer({ server })
-      wss.on('connection', (sock) => {
-        if (sock.upgradeReq.url == '/') {
-          this.initClient(sock)
-        }
-      })
+      this.getServerAddress(server)
+      wss.on('connection', (sock) => this.initClient(sock))
     }
   }
 
   private initClient(sock: WebSocket | Socket) {
     let client = new Client(sock)
     this.clients.push(client)
-    client.on('match', () => this.matchMaker.clientJoined(client))
+    client.on('match', () => {
+      this.matchMaker.waitList.add(client)
+      // this.matchMaker.clientJoined(client)
+    })
     client.disconnected(() => {
       let idx = this.clients.indexOf(client)
       idx > -1 && this.clients.splice(idx, 1)
     })
+  }
+
+  private getServerAddress(server: net.Server | http.Server) {
+    this.address = server.address()
+    this.address.address = this.address.address.replace(/^::$/, '127.0.0.1')
   }
 }

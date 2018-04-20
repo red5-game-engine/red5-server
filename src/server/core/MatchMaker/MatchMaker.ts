@@ -1,10 +1,12 @@
-import { Client, ClientState } from './Client'
-import { Server } from './Server'
-import { GameType, Game } from '..'
+import { Client, ClientState } from '../Client'
+import { Server } from '../Server'
 import * as cp from 'child_process'
+import { WaitList } from './WaitList'
 
 export interface MatchMaker {
   clientLeft(client: Client): void
+  clientJoined(client: Client): void
+  autoStartClientCount: number
 }
 
 export enum MatchStyle {
@@ -12,7 +14,7 @@ export enum MatchStyle {
 }
 
 export interface MatchMakerType<T extends MatchMaker> {
-  new(game: string)
+  new(server: Server, game: string): T
 }
 
 export abstract class MatchMaker {
@@ -20,21 +22,21 @@ export abstract class MatchMaker {
   private server!: Server
   private readonly game: string
 
-  // public abstract matchStyle: MatchStyle
-  // public abstract minClients: number
-  // public abstract maxClients: number
+  public waitList: WaitList = new WaitList
 
-  public constructor(game: string) {
+  public constructor(server: Server, game: string) {
+    this.server = server
     this.game = game
+    this.waitList.eventEmitter.on('player-joined', (client: Client) => {
+      if (typeof this.autoStartClientCount == 'number' && this.autoStartClientCount > 0) {
+        if (this.waitList.clients.length >= this.autoStartClientCount) {
+          this.start(this.waitList.get(this.autoStartClientCount))
+        }
+      }
+    })
   }
 
   public get players() { return this.server.clients.filter(c => c.state == ClientState.Searching) }
-
-  public abstract clientJoined(client: Client): void
-
-  private setServer(server: Server) {
-    this.server = server
-  }
 
   public start(clients: Client[]) {
     let fork = cp.fork(this.game, [clients.length.toString()], { silent: true })

@@ -13,12 +13,12 @@ export interface GameType<T extends Game> {
 
 export interface Game {
   init(): void
+  shutdown(): void
   clientDisconnected(client: Client): void
 }
 
 export abstract class Game {
 
-  public abstract shutdown(): void
   public abstract clientsReady(): void
 
   protected teams: Team[] = []
@@ -32,8 +32,8 @@ export abstract class Game {
 
   public static async run<T extends Game>(game: GameType<T>) {
     let g = new game()
-    await g['initialize']()
-    g.init()
+    await g.initialize()
+    typeof g.init == 'function' && g.init()
     return g
   }
 
@@ -92,7 +92,7 @@ export abstract class Game {
       process.send({ event: 'game-created', message: { ip: address.address, port: address.port } })
       process.once('exit', () => {
         this.wss.close()
-        this.shutdown()
+        typeof this.shutdown == 'function' && this.shutdown()
       })
     } else {
       process.exit()

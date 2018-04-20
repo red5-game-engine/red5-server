@@ -24,18 +24,18 @@ export class Client {
     this.client = client
     this.eventEmitter = new EventEmitter()
     if (client instanceof Socket) {
-      client.on('data', (data) => this.getMessage(data))
+      client.on('data', (data) => this.getMessage(data, client))
     } else {
-      client.on('message', (message: string) => this.getMessage(message))
+      client.on('message', (message: string) => this.getMessage(message, client))
     }
     client.on('close', () => this.eventEmitter.emit('disconnected'))
   }
 
   public send(event: string, message?: any) {
-    if (this.client instanceof WebSocket) {
-      this.client.send(JSON.stringify({ event, message }))
-    } else {
+    if (this.client instanceof Socket) {
       this.client.write(JSON.stringify({ event, message }))
+    } else {
+      this.client.send(JSON.stringify({ event, message }))
     }
   }
 
@@ -57,19 +57,20 @@ export class Client {
 
   public gameOver() {
     this.send('game-over')
-    if (this.client instanceof WebSocket) {
-      this.client.close()
-    } else {
+    if (this.client instanceof Socket) {
       this.client.end()
+    } else {
+      this.client.close()
     }
   }
 
-  private getMessage(message: string | Buffer) {
+  private getMessage(message: string | Buffer, client: WebSocket | Socket) {
     try {
       let msg = JSON.parse(message.toString()) as ClientMessage
       if (!msg.event) throw new Error('No event specified')
       this.eventEmitter.emit(msg.event, msg.message)
     } catch (e) {
+      console.error(e.stack)
       this.eventEmitter.emit('error', message)
     }
   }
