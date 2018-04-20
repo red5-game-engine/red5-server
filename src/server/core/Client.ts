@@ -1,6 +1,7 @@
 import * as WebSocket from 'uws'
 import * as EventEmitter from 'events'
 import * as uuid from 'uuid/v4'
+import { Socket } from 'net';
 
 interface ClientMessage {
   event: string
@@ -13,29 +14,29 @@ export enum ClientState {
 
 export class Client {
 
-  private readonly client: WebSocket
+  private readonly client: WebSocket | Socket
   private readonly eventEmitter: EventEmitter
   public readonly id: string = uuid()
 
   public state: ClientState = ClientState.Idle
 
-  public constructor(client: WebSocket) {
+  public constructor(client: WebSocket | Socket) {
     this.client = client
     this.eventEmitter = new EventEmitter()
-    client.on('message', (message: string) => {
-      try {
-        let msg = JSON.parse(message) as ClientMessage
-        if (!msg.event) throw new Error('No event specified')
-        this.eventEmitter.emit(msg.event, msg.message)
-      } catch (e) {
-        this.eventEmitter.emit('error', message)
-      }
-    })
+    if (client instanceof Socket) {
+      client.on('data', (data) => this.getMessage(data))
+    } else {
+      client.on('message', (message: string) => this.getMessage(message))
+    }
     client.on('close', () => this.eventEmitter.emit('disconnected'))
   }
 
   public send(event: string, message?: any) {
-    this.client.send(JSON.stringify({ event, message }))
+    if (this.client instanceof WebSocket) {
+      this.client.send(JSON.stringify({ event, message }))
+    } else {
+      this.client.write(JSON.stringify({ event, message }))
+    }
   }
 
   public on(event: string, callback: (...args: any[]) => void) {
@@ -56,7 +57,21 @@ export class Client {
 
   public gameOver() {
     this.send('game-over')
-    this.client.close()
+    if (this.client instanceof WebSocket) {
+      this.client.close()
+    } else {
+      this.client.end()
+    }
+  }
+
+  private getMessage(message: string | Buffer) {
+    try {
+      let msg = JSON.parse(message.toString()) as ClientMessage
+      if (!msg.event) throw new Error('No event specified')
+      this.eventEmitter.emit(msg.event, msg.message)
+    } catch (e) {
+      this.eventEmitter.emit('error', message)
+    }
   }
 
 }

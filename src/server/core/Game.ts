@@ -5,7 +5,7 @@ import { Client } from './Client'
 import { Team } from './Team'
 import * as cp from 'child_process'
 import { publicDecrypt } from 'crypto';
-const op = require('openport')
+import * as getPort from 'get-port'
 
 export interface GameType<T extends Game> {
   new(): T
@@ -28,34 +28,11 @@ export abstract class Game {
 
   public constructor() {
     this.startingClientCount = parseInt(process.argv[2])
-    op.find((err: Error | undefined, port: number) => {
-      if (process.send) {
-        if (err) return process.send({ event: 'no-port' })
-        let server = http.createServer().listen(port)
-        let address = server.address()
-        address.address = address.address.replace(/^::$/, '127.0.0.1')
-        this.wss = new WebSocketServer({ server })
-        this.wss.on('connection', (ws) => {
-          let client = new Client(ws)
-          this.clients.push(client)
-          if (this.clients.length == this.startingClientCount) {
-            this.clientsReady()
-          }
-          client.disconnected(() => {
-            typeof this.clientDisconnected == 'function' && this.clientDisconnected(client)
-          })
-        })
-        process.send({ event: 'game-created', message: { ip: address.address, port: address.port } })
-        process.once('exit', () => {
-          this.wss.close()
-          this.shutdown()
-        })
-      }
-    })
   }
 
-  public static run<T extends Game>(game: GameType<T>) {
+  public static async run<T extends Game>(game: GameType<T>) {
     let g = new game()
+    await g['initialize']()
     g.init()
     return g
   }
@@ -92,6 +69,34 @@ export abstract class Game {
   protected leaveTeam(...args: any[]): boolean {
     let team = typeof args[0] == 'string' ? this.teams.find(t => t.name == args[0]) : args[0]
     return team ? team.leave(args[1]) : false
+  }
+
+  private async initialize() {
+    if (process.send) {
+      let port = await getPort()
+      // if (err) return process.send({ event: 'no-port' })
+      let server = http.createServer().listen(port)
+      let address = server.address()
+      address.address = address.address.replace(/^::$/, '127.0.0.1')
+      this.wss = new WebSocketServer({ server })
+      this.wss.on('connection', (ws) => {
+        let client = new Client(ws)
+        this.clients.push(client)
+        if (this.clients.length == this.startingClientCount) {
+          this.clientsReady()
+        }
+        client.disconnected(() => {
+          typeof this.clientDisconnected == 'function' && this.clientDisconnected(client)
+        })
+      })
+      process.send({ event: 'game-created', message: { ip: address.address, port: address.port } })
+      process.once('exit', () => {
+        this.wss.close()
+        this.shutdown()
+      })
+    } else {
+      process.exit()
+    }
   }
 
 }

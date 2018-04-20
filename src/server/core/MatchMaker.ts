@@ -11,14 +11,18 @@ export enum MatchStyle {
   FirstComeFirstServer
 }
 
+export interface MatchMakerType<T extends MatchMaker> {
+  new(game: string)
+}
+
 export abstract class MatchMaker {
 
   private server!: Server
   private readonly game: string
 
-  public abstract matchStyle: MatchStyle
-  public abstract minClients: number
-  public abstract maxClients: number
+  // public abstract matchStyle: MatchStyle
+  // public abstract minClients: number
+  // public abstract maxClients: number
 
   public constructor(game: string) {
     this.game = game
@@ -34,7 +38,7 @@ export abstract class MatchMaker {
 
   public start(clients: Client[]) {
     let fork = cp.fork(this.game, [clients.length.toString()], { silent: true })
-    this.server.workers.push(fork)
+    // this.server.workers.push(fork)
     console.log('created new game fork')
     let startAttempts = 0
     fork.on('message', (message) => {
@@ -54,8 +58,9 @@ export abstract class MatchMaker {
         console.log(message)
       }
     }).on('exit', () => {
-      let forkIdx = this.server.workers.indexOf(fork)
-      forkIdx > -1 && this.server.workers.splice(forkIdx, 1)
+      console.log('exit game fork')
+      // let forkIdx = this.server.workers.indexOf(fork)
+      // forkIdx > -1 && this.server.workers.splice(forkIdx, 1)
     })
   }
 

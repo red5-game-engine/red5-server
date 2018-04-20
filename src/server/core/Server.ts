@@ -1,35 +1,40 @@
+import * as WebSocket from 'uws'
 import { Server as WebSocketServer } from 'uws'
 import { Client } from './Client'
-import { Game, GameType } from './Game';
-import { MatchMaker } from './MatchMaker';
-import { ChildProcess } from 'child_process';
-// import * as cluster from 'cluster'
-// import * as os from 'os'
+import { MatchMaker, MatchMakerType } from './MatchMaker';
 import * as http from 'http'
+import * as net from 'net'
+import { Socket } from 'net';
 
 export interface Red5Options {
   port?: number
   redis?: string
   workers?: number
+  type: 'socket' | 'websocket'
+  matchMaker: MatchMakerType<MatchMaker>
+  game: string
 }
 
 export class Server {
 
   public readonly clients: Client[] = []
-  public readonly workers: ChildProcess[] = []
+  // public readonly workers: ChildProcess[] = []
   private readonly matchMaker!: MatchMaker
   public address!: { port: number, family: string, address: string }
 
   public readonly settings: Red5Options = {
     port: 5555,
     redis: undefined,
-    workers: -1
+    workers: -1,
+    matchMaker: undefined,
+    game: '',
+    type: 'websocket'
   }
 
-  public constructor(matchMaker: MatchMaker, options?: Red5Options) {
+  public constructor(options: Red5Options) {
     this.settings = Object.assign(this.settings, options)
-    this.matchMaker = matchMaker
-    process.on('SIGINT', () => this.workers.forEach(worker => worker.kill('SIGINT')))
+    this.matchMaker = new this.settings.matchMaker(this.settings.game)
+    // process.on('SIGINT', () => this.workers.forEach(worker => worker.kill('SIGINT')))
     this.initServer()
   }
 
@@ -66,30 +71,31 @@ export class Server {
   private initServer() {
     this.matchMaker['setServer'](this)
 
-    let server = http.createServer().listen(this.settings.port)
-    this.address = server.address()
-    this.address.address = this.address.address.replace(/^::$/, '127.0.0.1')
-    let wss = new WebSocketServer({ server })
-
-    wss.on('connection', (ws) => {
-      if (ws.upgradeReq.url == '/') {
-        let client = new Client(ws)
-        this.clients.push(client)
-        this.matchMaker.clientJoined(client)
-        client.disconnected(() => {
-          let idx = this.clients.indexOf(client)
-          idx > -1 && this.clients.splice(idx, 1)
-        })
-      } else {
-        if (typeof ws.upgradeReq.url == 'string') {
-          // console.log('here')
-          // let gameProcessId = parseInt(ws.upgradeReq.url.replace(/\//g, ''))
-          // let gameProcess = this.workers.find(w => w.pid == gameProcessId)
-          // if (gameProcess) {
-          //   // gameProcess.
-          // }
+    if (this.settings.type == 'socket') {
+      let server = new net.Server().listen(this.settings.port)
+      server.on('connection', (sock) => {
+        this.initClient(sock)
+      })
+    } else {
+      let server = http.createServer().listen(this.settings.port)
+      this.address = server.address()
+      this.address.address = this.address.address.replace(/^::$/, '127.0.0.1')
+      let wss = new WebSocketServer({ server })
+      wss.on('connection', (sock) => {
+        if (sock.upgradeReq.url == '/') {
+          this.initClient(sock)
         }
-      }
+      })
+    }
+  }
+
+  private initClient(sock: WebSocket | Socket) {
+    let client = new Client(sock)
+    this.clients.push(client)
+    client.on('match', () => this.matchMaker.clientJoined(client))
+    client.disconnected(() => {
+      let idx = this.clients.indexOf(client)
+      idx > -1 && this.clients.splice(idx, 1)
     })
   }
 }

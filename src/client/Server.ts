@@ -39,8 +39,13 @@ namespace red5 {
       }
     }
 
-    public joined(callback: (game: GameServer) => void) {
+    public matchMade(callback: (game: GameServer) => void) {
       this.joinEvents.push({ callback })
     }
+
+    public makeMatch() {
+      this.send('match')
+    }
+
   }
 }
