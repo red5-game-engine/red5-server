@@ -18,7 +18,7 @@
   },
   "main": "lib/server/index.js",
   "bin": {
-    "red5": "./lib/cli/cli.js"
+    "red5": "lib/cli/cli.js"
   },
   "scripts": {
     "prepack": "npm run clean",
@@ -28,11 +28,15 @@
   "author": "Ryan Naddy",
   "license": "ISC",
   "dependencies": {
+    "better-console": "^1.0.1",
+    "command-line-args": "^5.0.2",
+    "copy-dir": "^0.3.0",
     "get-port": "^3.2.0",
     "uuid": "^3.2.1",
     "uws": "^9.147.0"
   },
   "devDependencies": {
+    "@types/command-line-args": "^4.0.2",
     "@types/get-port": "^3.2.0",
     "@types/uuid": "^3.4.3",
     "@types/uws": "^0.13.2",
