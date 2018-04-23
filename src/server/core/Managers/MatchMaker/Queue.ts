@@ -1,7 +1,7 @@
-import { Client } from '../..'
+import { Client } from '../..//..'
 import { EventEmitter } from 'events';
 
-export class WaitList {
+export class Queue {
 
   public readonly clients: Client[] = []
   public readonly eventEmitter: EventEmitter = new EventEmitter
@@ -12,7 +12,7 @@ export class WaitList {
     clients.forEach(client => {
       if (!this.clients.includes(client)) {
         this.clients.push(client)
-        this.eventEmitter.emit('player-joined', client)
+        this.eventEmitter.emit('added', client)
       }
     })
   }
@@ -34,6 +34,18 @@ export class WaitList {
     let clients = this.clients.filter(callback)
     if (limit > 0) clients = clients.splice(0, limit)
     return this.remove(...clients)
+  }
+
+  public on(event: string, listener: (...args: any[]) => void) {
+    return this.eventEmitter.on(event, listener)
+  }
+
+  public off(event: string, listener: (...args: any[]) => void) {
+    return this.eventEmitter.removeListener(event, listener)
+  }
+
+  public once(event: string, listener: (...args: any[]) => void) {
+    return this.eventEmitter.once(event, listener)
   }
 
 }

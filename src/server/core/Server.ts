@@ -1,7 +1,7 @@
 import * as WebSocket from 'uws'
 import { Server as WebSocketServer } from 'uws'
 import { Client } from './Client'
-import { MatchMaker, MatchMakerType } from './MatchMaker';
+import { MatchMaker, MatchMakerType } from './Managers'
 import * as http from 'http'
 import * as net from 'net'
 import { Socket } from 'net';
@@ -10,7 +10,7 @@ export interface Red5Options {
   port?: number
   redis?: string
   workers?: number
-  type: 'socket' | 'websocket' | 'both'
+  socketType: 'socket' | 'websocket' | 'both'
   matchMaker: MatchMakerType<MatchMaker>
   game: string
 }
@@ -27,7 +27,7 @@ export class Server {
     port: 5555,
     workers: -1,
     game: undefined,
-    type: undefined,
+    socketType: undefined,
     redis: undefined,
     matchMaker: undefined
   }
@@ -70,7 +70,7 @@ export class Server {
   // }
 
   private initServer() {
-    if (this.settings.type == 'socket') {
+    if (this.settings.socketType == 'socket') {
       let server = new net.Server().listen(this.settings.port)
       this.getServerAddress(server)
       server.on('connection', (sock) => this.initClient(sock))
@@ -86,7 +86,7 @@ export class Server {
     let client = new Client(sock)
     this.clients.push(client)
     client.on('match', () => {
-      this.matchMaker.waitList.add(client)
+      this.matchMaker.queue.add(client)
       // this.matchMaker.clientJoined(client)
     })
     client.disconnected(() => {

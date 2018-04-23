@@ -2,7 +2,6 @@ import * as WebSocket from 'uws'
 import { Server as WebSocketServer } from 'uws'
 import * as http from 'http'
 import { Client } from './Client'
-import { Team } from './Team'
 import * as cp from 'child_process'
 import { publicDecrypt } from 'crypto';
 import * as getPort from 'get-port'
@@ -19,9 +18,9 @@ export interface Game {
 
 export abstract class Game {
 
-  public abstract clientsReady(): void
+  protected abstract clientsReady(): void
+  protected abstract joined(client: Client): void
 
-  protected teams: Team[] = []
   protected clients: Client[] = []
   protected startingClientCount: number
   private wss!: WebSocketServer
@@ -34,41 +33,17 @@ export abstract class Game {
     let g = new game()
     await g.initialize()
     typeof g.init == 'function' && g.init()
+    process.on('SIGINT', () => g.serverExit())
     return g
+  }
+
+  private serverExit() {
+    this.clients.forEach(client => client.serverKilled())
   }
 
   public gameExit() {
     this.clients.forEach(client => client.gameOver())
     process.exit(0)
-  }
-
-  protected createTeam(name: string, client?: Client) {
-    let team = this.teams.find(t => t.name == name)
-    if (!team) {
-      team = new Team(name)
-      this.teams.push(team)
-    } else {
-      client && team.join(client)
-    }
-    return team
-  }
-
-  protected joinTeam(team: Team, client: Client): boolean
-  protected joinTeam(name: string, client: Client): boolean
-  protected joinTeam(...args: any[]): boolean {
-    let team = typeof args[0] == 'string' ? this.teams.find(t => t.name == args[0]) : args[0]
-    let client: Client = args[1]
-    if (team instanceof Team) {
-      return team.join(client)
-    }
-    return false
-  }
-
-  protected leaveTeam(team: Team, client: Client): boolean
-  protected leaveTeam(name: string, client: Client): boolean
-  protected leaveTeam(...args: any[]): boolean {
-    let team = typeof args[0] == 'string' ? this.teams.find(t => t.name == args[0]) : args[0]
-    return team ? team.leave(args[1]) : false
   }
 
   private async initialize() {
@@ -82,6 +57,7 @@ export abstract class Game {
       this.wss.on('connection', (ws) => {
         let client = new Client(ws)
         this.clients.push(client)
+        this.joined(client)
         if (this.clients.length == this.startingClientCount) {
           this.clientsReady()
         }

@@ -20,6 +20,8 @@ export class Client {
 
   public state: ClientState = ClientState.Idle
 
+  public data: any = {}
+
   public constructor(client: WebSocket | Socket) {
     this.client = client
     this.eventEmitter = new EventEmitter()
@@ -57,6 +59,15 @@ export class Client {
 
   public gameOver() {
     this.send('game-over')
+    if (this.client instanceof Socket) {
+      this.client.end()
+    } else {
+      this.client.close()
+    }
+  }
+
+  public serverKilled() {
+    this.send('server-killed')
     if (this.client instanceof Socket) {
       this.client.end()
     } else {

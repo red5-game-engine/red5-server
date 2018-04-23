@@ -3,8 +3,9 @@ namespace red5 {
     protected onMessage(message: MessageEvent) {
       let msg = JSON.parse(message.data.toString()) as MessageFromServer
       if (msg.event == 'game-over') this.disconnect()
-      this.events.filter(e => e.event == msg.event).forEach(evt => evt.callback(evt.message))
-      this.allEvents.forEach(item => item.callback(item.message))
+      if (msg.event == 'server-killed') this.disconnect()
+      this.events.filter(e => e.event == msg.event).forEach(evt => evt.callback(msg.message))
+      this.allEvents.forEach(item => item.callback(msg.message))
     }
   }
 }
