@@ -1,14 +1,31 @@
 {
   "name": "red5",
   "version": "1.0.0",
-  "description": "",
+  "description": "Create networked multiplayer games using sockets or websockets",
+  "keywords": [
+    "sockets",
+    "websockets",
+    "networking",
+    "multiplayer",
+    "video games"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheColorRed/red5"
+  },
+  "bugs": {
+    "url": "https://github.com/TheColorRed/red5/issues"
+  },
   "main": "lib/server/index.js",
+  "bin": {
+    "red5": "./lib/cli/cli.js"
+  },
   "scripts": {
     "prepack": "npm run clean",
     "clean": "rm -rf ./lib && rm -rf ./types && tsc -p ./src/client/tsconfig.json && tsc -p ./src/server/tsconfig.json && uglifyjs -c -m -o ./lib/client/red5.min.js -- ./lib/client/red5.js"
   },
   "types": "types/index.d.ts",
-  "author": "",
+  "author": "Ryan Naddy",
   "license": "ISC",
   "dependencies": {
     "get-port": "^3.2.0",

@@ -8,7 +8,8 @@
       "problemMatcher": "$tsc-watch",
       "dependsOn": [
         "Client",
-        "Server"
+        "Server",
+        "CLI"
       ]
     },
     {
@@ -30,6 +31,17 @@
       "args": [
         "-p",
         "src/server",
+        "-w"
+      ]
+    },
+    {
+      "label": "CLI",
+      "type": "shell",
+      "command": "tsc",
+      "problemMatcher": "$tsc-watch",
+      "args": [
+        "-p",
+        "src/cli",
         "-w"
       ]
     }
