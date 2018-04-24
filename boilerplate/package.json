@@ -1,0 +1,11 @@
+{
+  "name": "my-multiplayer-game",
+  "version": "1.0.0",
+  "main": "./server/Server.js",
+  "dependencies": {
+    "red5": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*"
+  }
+}

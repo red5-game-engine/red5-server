@@ -1,9 +1,0 @@
-{
-  "name": "my-multiplayer-game",
-  "version": "1.0.0",
-  "dependencies": {
-    "uws": "^9.148.0",
-    "gulp": "^3.9.1",
-    "node-sass": "^4.8.3"
-  }
-}
