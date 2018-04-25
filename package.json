@@ -1,6 +1,6 @@
 {
   "name": "red5",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Create networked multiplayer games using sockets or websockets",
   "keywords": [
     "sockets",
@@ -17,38 +17,24 @@
     "url": "https://github.com/TheColorRed/red5/issues"
   },
   "main": "lib/server/index.js",
-  "bin": {
-    "red5": "lib/cli/cli.js"
-  },
   "scripts": {
     "prepack": "npm run clean",
-    "clean": "npm run rm && npm run build-client && npm run build-server && npm run build-cli && npm run uglify",
+    "clean": "npm run rm && npm run build-client && npm run build-server && npm run uglify",
     "rm": "rm -rf ./lib && rm -rf ./types",
     "build-client": "tsc -p ./src/client/tsconfig.json",
     "build-server": "tsc -p ./src/server/tsconfig.json",
-    "build-cli": "tsc -p ./src/cli/tsconfig.json",
     "uglify": "uglifyjs -c -m -o ./lib/client/red5.min.js -- ./lib/client/red5.js"
   },
   "types": "types/index.d.ts",
   "author": "Ryan Naddy",
   "license": "ISC",
   "dependencies": {
-    "@types/chalk": "^0.4.31",
-    "@types/command-line-args": "^4.0.2",
     "@types/get-port": "^3.2.0",
-    "@types/glob": "^5.0.35",
-    "@types/node": "^9.6.1",
+    "@types/node": "^9.6.6",
     "@types/uuid": "^3.4.3",
     "@types/uws": "^0.13.2",
-    "chalk": "^2.3.0",
-    "command-line-args": "^5.0.2",
-    "copy-dir": "^0.3.0",
     "get-port": "^3.2.0",
-    "glob": "^7.1.2",
     "uuid": "^3.2.1",
-    "uws": "^9.147.0"
-  },
-  "devDependencies": {
-    "uglify-es": "^3.3.10"
+    "uws": "^9.148.0"
   }
 }
